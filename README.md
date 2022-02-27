@@ -22,6 +22,7 @@ The data frame included in this tutorial (`nsduh_20152019_subset.RData`) include
 2. Setup design-based analysis using `svydesign`
 3. Descriptive statistics using `svymean`, `svyby`, and `svyciprop`
 4. T-tests, correlations, and design-based Wald (chi-square) tests of independence
-5. Regression analysis using `svyglm` and diagnositics using the `svydiags` package
+5. Regression analysis using `svyglm` 
+6. Regression diagnositics using the `svydiags` package (**under construction!**)
 
 Note: A useful resource for analyzing complex sample data in R is available [here](http://asdfree.com/national-study-on-drug-use-and-health-nsduh.html).
