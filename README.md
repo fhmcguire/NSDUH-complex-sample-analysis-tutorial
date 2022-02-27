@@ -21,7 +21,7 @@ The data frame included in this tutorial (`nsduh_20152019_subset.RData`) include
 1. Load the data frame and identify a subpopulation of interest
 2. Setup design-based analysis using `svydesign`
 3. Descriptive statistics using `svymean`, `svyby`, and `svyciprop`
-4. T-tests, correlations, and design-based Wald (chi-square) tests of independence
+4. T-tests and design-based Wald (chi-square) tests of independence
 5. Regression analysis using `svyglm` 
 6. Regression diagnositics using the `svydiags` package (**under construction!**)
 
