@@ -1,0 +1,272 @@
+---
+title: "Complex Sample Survey Data Analysis: NSDUH 2015-2019"
+author: "F. Hunter McGuire, MPH"
+date: "February 28, 2022"
+output: 
+  rmarkdown::html_document:
+    theme: cosmo
+    highlight: pygments
+    toc: true
+    toc_float: true
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+## **Background and Purpose**
+
+The purpose of this tutorial is to provide brief introduction to conducting design-based analysis of complex sample survey data using the `survey` package in `R`.
+
+We will be using data from the **National Survey on Drug Use and Health (NSDUH)**. NSDUH is a repeated cross-sectional household survey distributed annually to a sample of non-institutionalized residents of the United States. Its primary aim is to monitor drug and alcohol use by providing nationally-representative estimates of substance use behaviors, mental health status, and correlates of these health outcomes/behaviors. Additional information on NSDUH can be found [here](https://nsduhweb.rti.org/respweb/about_nsduh.html).
+
+To improve estimate precision and reduce overall survey costs, households (and specific individuals within households) who participate in NSDUH are selected through a complex set of **cluster and stratified sampling** procedures. Certain population subgroups (including younger people, Hispanic people, Black/African-American people) are also **oversampled relative to their general population size** to produce more reliable estimates (i.e., through standard error reduction). This ultimately generates a sample in which there is **unequal probability of selection** across sampling units, and produces somewhat homogeneous samples within clusters due to shared community characteristics (i.e., **nonindependence**). Together, these violate simple random sample assumptions (equal probability of selection, independence of observations) common across basic statistical procedures. 
+
+**In order to generate accurate nationally-representative estimates (e.g., proportions, means, standard errors) from complex sample survey data, we have to conduct design-based analysis** (i.e., analysis that adjusts for unequal probability of selection). For more information on NSDUH sample design can be found in the [NSDUH 2019 Sample Design Report](https://www.samhsa.gov/data/sites/default/files/reports/rpt34664/NSDUHmrbSampleDesign2019.pdf). Guidance for statistical analysis can be found in the [NSDUH 2019 Statistical Inference Report](https://www.samhsa.gov/data/sites/default/files/reports/rpt34666/NSDUHmrbStatInference2019.pdf).
+
+### Data frame information: NSDUH 2015-2019
+
+The data frame included in this tutorial (`nsduh_20152019_subset.RData`) includes 5 combined waves (2015, 2016, 2017, 2018, 2019) and a subset of 15 variables to reduce the overall file size.
+
+**Combining waves**: To increase the sample size of relatively small population subgroups, it is common practice in public health research to combine multiple waves from national cross-sectional datasets like NSDUH. However, additional procedures are needed to adjust sampling weights, and these simple steps are outlined in this tutorial.
+
+**Unconditional analysis of a subpopulation**: In addition, researchers are often interested in studying a specific subpopulation (e.g., adolescents). Here, it is neccessary to identify the subpopulation within the overall dataset for the analysis at hand. **Avoid dropping unused observations as this removes key information used to generate variance estimates.** Additional background information on subpopulation analysis can be found in [West, Berglund, & Herringa, 2008](https://journals.sagepub.com/doi/pdf/10.1177/1536867X0800800404) and in [Lumley, 2021](https://cran.r-project.org/web/packages/survey/vignettes/domain.pdf).
+
+### Key issues and procedures covered
+1. Load the data frame and identify a subpopulation of interest
+2. Setup design-based analysis using `svydesign`
+3. Descriptive statistics using `svymean`, `svyby`, and `svyciprop`
+4. T-tests, correlations, and design-based Wald (chi-square) tests of independence
+5. Regression analysis using `svyglm`
+6. Regression diagnositics using the `svydiags` package (under construction!)
+
+Note: A useful resource for analyzing complex sample data in R is available [here](http://asdfree.com/national-study-on-drug-use-and-health-nsduh.html).
+
+## **Setup**
+
+First, we need to load the NSDUH 2015-2019 dataset and the necessary `R` packages relevant for this analysis.
+
+The most important package is the `survey` package [(Lumley, 2021)](https://cran.r-project.org/web/packages/survey/survey.pdf). This package provides flexible tools to generate design-based estimates that account for the complex sample survey design of NSDUH.
+
+We will also use the `svydiags` package to compute diagnostic data for regression models fitted with complex survey data [Valliant, 2018](https://cran.r-project.org/web/packages/svydiags/svydiags.pdf)
+
+This project also uses the core suite of `tidyverse` packages to assist with data management procedures [(Wickham, 2021)](https://cran.r-project.org/web/packages/tidyverse/tidyverse.pdf), the `stats` package to run statistical procedures [(R Core Team)](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/00Index.html), and the `jtools` package for miscellaneous statistical procedures [(Long, 2021)](https://cran.r-project.org/web/packages/jtools/jtools.pdf).
+
+```{r setup, message=FALSE}
+# set working directory (update file path to where you stored the dataset)
+setwd("C:/Users/Hunter McGuire/Desktop/Box Sync/Invited Talks and Guest Lectures/Complex Sample Survey Analysis/")
+
+# load packages
+library(survey) ## run design-based analysis
+library(svydiags) ## regression diagnostics
+library(tidyverse) ## data management
+library(stats) ## for running statistical procedures
+library(jtools) ## Analysis and Presentation of Social Scientific Data
+```
+
+## **Load the data frame and identify a subpopulation of interest**
+
+The following code outlines some initial data management steps. I have renamed some variables to make it easier to quickly identify and interpret results. See the [NSDUH 2019 Public Use File Codebook](https://www.datafiles.samhsa.gov/sites/default/files/field-uploads-protected/studies/NSDUH-2019/NSDUH-2019-datasets/NSDUH-2019-DS0001/NSDUH-2019-DS0001-info/NSDUH-2019-DS0001-info-codebook.pdf) for more information on variables and coding schemes in NSDUH.
+
+**Subpopulation**: In this tutorial, the subpopulation of interest are adults (aged 18+) in the United States with non-missing data on the following variables: depression_bin (past-year major depressive episode, binary coded), stress_cont (Kessler K6 distress scale, continuous: range 0-24), race/ethnicity (newrace2), gender (irsex), sexident (sexual orientation), annual household income level (income), and anyhlti2 (any health insurance).
+
+Following the procedures below, we identify a subpopulation of N=207,479 participants who meet our study eligibility criteria.
+
+```{r datamgmt, message=FALSE}
+# Load the data set
+load(file="nsduh_20152019_subset.RData")
+nsduh <- rename(nsduh_20152019_subset) # shorten the data set name
+rm(nsduh_20152019_subset) # remove old data frame
+
+# set invalid responses to missing (NA)
+library(naniar)
+nsduh <- nsduh %>% 
+  replace_with_na(replace = list(sexident = c(85, 89, 94, 97, 98, 99))) %>% 
+  replace_with_na(replace = list(anyhlti2 = c(94, 97, 98)))
+
+# create factor variables for categorical vars
+nsduh$amdeyr <- as.factor(nsduh$amdeyr) # past-year major depressive episode (MDE)
+nsduh$newrace2 <- as.factor(nsduh$newrace2) # racial/ethnic identity
+nsduh$irsex <- as.factor(nsduh$irsex) # gender (binary woman/man)
+nsduh$sexident <- as.factor(nsduh$sexident) # sexual orientation
+nsduh$catag6 <- as.factor(nsduh$catag6) # age category
+nsduh$income <- as.factor(nsduh$income) # annual household income level
+nsduh$anyhlti2 <- as.factor(nsduh$anyhlti2) # any health insurance (1=yes)
+nsduh$year <- as.factor(nsduh$year) # year of NSDUH survey completion
+
+# rename/mutate variables for ease of use in analysis
+nsduh <- nsduh %>%
+  mutate(
+    white = factor(ifelse(newrace2 == "1", 1, 0)), # White
+    black = factor(ifelse(newrace2 == "2", 1, 0)), # Black/African-American
+    naan = factor(ifelse(newrace2 == "3", 1, 0)), # Native American or Alaska Native
+    nhpi = factor(ifelse(newrace2 == "4", 1, 0)), # Native Hawaiian/Pacific Islander
+    asian = factor(ifelse(newrace2 == "5", 1, 0)), # Asian
+    multi = factor(ifelse(newrace2 == "6", 1, 0)), # Multiracial
+    hispanic = factor(ifelse(newrace2 == "7", 1, 0)), # Hispanic
+    man = factor(ifelse(irsex == "1", 1, 0)), # Men
+    woman = factor(ifelse(irsex == "2", 1, 0)), # Women
+    hetero = factor(ifelse(sexident == "1", 1, 0)), # Heterosexual
+    gay = factor(ifelse(sexident == "2", 1, 0)), # Gay
+    bi = factor(ifelse(sexident == "3", 1, 0)), # Bisexual
+    depression_bin = factor(ifelse(amdeyr == "1", 1, 0)), # Past-year MDE
+    healthins = factor(ifelse(anyhlti2 == "1", 1, 0)), # any health insurance
+    stress_cont = k6scmon) %>% # K6 Distress Scale
+  mutate(
+    subpop = factor(ifelse(!is.na(newrace2) & !is.na(sexident) & !is.na(irsex) & !is.na(depression_bin) & !is.na(stress_cont) & !is.na(income) & !is.na(catag6) & !is.na(healthins) & (catag6!="1"), 1, 0))) # this creates a "subpop" variable to identify all observations in the dataset that have non-missing values on each of the study variables of interest.
+
+table(nsduh$subpop) # This indicates that 207,479 participants have non-missing data on our study variables.
+```
+
+
+## **Setup design-based analysis**
+
+NSDUH includes the following survey weight variables: **vestr** (variance estimation stratum), **verep** (variance estimation cluster replicates), and **analwt_c** (person-level analysis weight). The `svydesign` procedure takes these variables as arguments to generate a design object that we can easily include in our analysis going forward.
+
+**Combining waves**: Since we are combining multiple data collection waves in this tutorial, we need to divide the person-level analysis weight by the number of waves included.
+
+**Subpopulation**: Using the "subpop" variable we generated in the prior step, we can simply subset the `svydesign` object to includ our subpopulation (N=207,479).
+
+```{r svydesign, message=FALSE}
+# divide person-level analysis weight by 5 (5 waves included: 2015-2019)
+nsduh$adjwt_5 <- nsduh$analwt_c/5
+# Note: if only using one wave of data (e.g., only 2015), the above step is not required.
+
+# build up the primary survey object
+nsduh_design <- 
+  svydesign(
+    id = ~verep,
+    strata = ~vestr,
+    weights = ~adjwt_5,
+    data = nsduh,
+    nest = TRUE)
+
+# svydesign for the subpopulation -- we will use this throughout
+nsduh_design_sp <- subset(
+  nsduh_design, 
+  subpop=="1")
+summary(nsduh_design_sp) ## describes the svydesign object
+```
+
+## **Descriptive statistics**
+
+```{r descriptives, message=FALSE}
+# Survey-weighted means and 95% CI
+## Estimate mean K6 Distress Scale scores for entire subpop
+k6mean <- svymean(~stress_cont, nsduh_design_sp)
+k6mean
+## Estimate 95% confidence interval for entire subpop
+confint(k6mean)
+## Estimate mean for individual subgroups (gender)
+k6mean_gender <- svyby(~stress_cont, ~woman, design=nsduh_design_sp, svymean)
+k6mean_gender
+## Estimate 95% confidence interval for individual subgroups
+confint(k6mean_gender)
+
+# Survey-weighted proportions and 95% CI
+## Race/ethnicity
+svyciprop(~white, nsduh_design_sp, method="logit")
+svyciprop(~black, nsduh_design_sp, method="logit")
+svyciprop(~hispanic, nsduh_design_sp, method="logit")
+svyciprop(~asian, nsduh_design_sp, method="logit")
+svyciprop(~naan, nsduh_design_sp, method="logit")
+svyciprop(~nhpi, nsduh_design_sp, method="logit")
+svyciprop(~multi, nsduh_design_sp, method="logit")
+## Gender
+svyciprop(~woman, nsduh_design_sp, method="logit")
+svyciprop(~man, nsduh_design_sp, method="logit")
+##Sexual orientation
+svyciprop(~hetero, nsduh_design_sp, method="logit")
+svyciprop(~gay, nsduh_design_sp, method="logit")
+svyciprop(~bi, nsduh_design_sp, method="logit")
+## Past-year major depressive episode
+svyciprop(~depression_bin, nsduh_design_sp, method="logit")
+## Any health insurance
+svyciprop(~healthins, nsduh_design_sp, method="logit")
+## Age category
+svyciprop(~I(catag6==2), nsduh_design_sp, method="logit")
+svyciprop(~I(catag6==3), nsduh_design_sp, method="logit")
+svyciprop(~I(catag6==4), nsduh_design_sp, method="logit")
+svyciprop(~I(catag6==5), nsduh_design_sp, method="logit")
+svyciprop(~I(catag6==6), nsduh_design_sp, method="logit")
+## Income level
+svyciprop(~I(income==1), nsduh_design_sp, method="logit")
+svyciprop(~I(income==2), nsduh_design_sp, method="logit")
+svyciprop(~I(income==3), nsduh_design_sp, method="logit")
+svyciprop(~I(income==4), nsduh_design_sp, method="logit")
+
+## Graphing continuous variables
+# Note: Currently ggplot2 is not equipped to handle complex sample data, but there are some packages online that are beginning to overcome this hurdle.
+svyhist(~stress_cont, nsduh_design_sp) # positive skew
+svyboxplot(~stress_cont~1, nsduh_design_sp, all.outliers = TRUE) 
+```
+
+## **T-tests and design-based Wald (chi-square) tests of independence**
+
+```{r analysis_1, message=FALSE}
+# Do Kessler-6 Distress Scale scores differ between men and women?
+## Independent samples t-test: svyttest(cont~cat, design)
+t <- svyttest(stress_cont ~ woman, 
+              design=nsduh_design_sp)
+t 
+## Yes, women have higher scores.
+## Mean difference = 0.61 (95% CI: 0.56, 0.67)
+
+## Notes: 
+## paired sample t-test can be run as: svyttest(I(var1-var2)~0, design)
+## one-sample t-test can be run as: svyttest(var~0, design)
+
+## Wilcoxon signed rank test (non-parametric independent t-test)
+w <- svyranktest(stress_cont ~ woman, nsduh_design_sp, test=c("wilcoxon"))
+w
+
+
+# Does the depression prevalence differ by sexual orientation?
+## Design-based Wald (chi-square) test of association: svychisq(~cat+cat, design, statistic="adjWald")
+c <- svychisq(~depression_bin + sexident,
+              design=nsduh_design_sp, 
+              statistic="adjWald")
+c
+## Yes, there are differences in depression by sexual orientation.
+```
+
+## **Regression analysis**
+
+```{r analysis_2, message=FALSE}
+# Linear regression
+## Are there differences in Kessler-6 Distress Scale scores by race/ethnicity?
+### Simple linear regression
+a1 <- svyglm(stress_cont ~ black + hispanic + asian + naan + nhpi + multi, 
+             nsduh_design_sp, 
+             family=gaussian())
+summary(a1)
+# Yes, compared to white participants: Black, Native Hawaiian/Pacific Islander, and Hispanic participants had lower stress scores; Multiracial participants had higher stress scores.
+
+## Is race/ethnicity still a significant predictor of Kessler-6 Distress Scale scores after controlling for income level, age category, and health insurance status?
+### Multivariate linear regression
+a2 <- svyglm(stress_cont ~ black + hispanic + asian + naan + nhpi + multi + income + catag6 + anyhlti2,
+             nsduh_design_sp, 
+             family=gaussian())
+summary(a2) ## Note: we should assess regression diagnostics before reporting results
+
+### Logistic regression
+a3 <- svyglm(depression_bin ~ gay + bi,
+             nsduh_design_sp,
+             family=quasibinomial())
+summary(a3)
+```
+
+## **Regression diagnostics for complex sample data**
+
+```{r diagnostics, message=FALSE}
+# Coming soon!
+
+# Linear regression diagnostics (`svydiags` package)
+## Linearity between X variables and Y
+## Multicollinearity
+## Homoscedasticity of residual variance
+## Normality of residuals
+
+# Logistic regression assumptions
+## X variables are linearly related to the logit of the Y variable
+```
+
