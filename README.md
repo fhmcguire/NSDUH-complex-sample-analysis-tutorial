@@ -1,4 +1,4 @@
-# NSDUH-complex-sample-analysis-tutorial
+# Complex sample survey analysis in R: NSDUH tutorial
 ## **Background and Purpose**
 
 The purpose of this tutorial is to provide brief introduction to conducting design-based analysis of complex sample survey data using the `survey` package in `R`.
