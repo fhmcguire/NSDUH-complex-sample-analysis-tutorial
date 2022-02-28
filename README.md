@@ -1,5 +1,44 @@
 # Complex sample survey analysis in R: NSDUH tutorial
-## **Background and Purpose**
+
+## Information and instructions to prepare for this tutorial
+To complete this tutorial, you will need to complete the following steps:
+1. Install R and R Studio
+2. Download and save the tutorial materials
+3. Install the rmarkdown, tidyverse, survey, svydiags, naniar, and table1 packages (if you do not already have them)
+
+Follow the instructions below to install and download everything you will need.
+
+### Install R and R Studio
+R is the software and R Studio is the IDE (Interactive Development Environment) that makes R easier to use. Install R before you install R Studio because R Studio will look for R during installation.
+
+**If you don't already have it, download and install R:**
++ Click the download R link on the [R Project for Statistical Computing](https://www.r-project.org/) website
++ Choose any one of the options from the [CRAN Mirrors](https://cran.r-project.org/mirrors.html) list
++ Click on the download that is appropriate for your operating system, Linux, Mac, or Windows; if you are not given this option, go back to the [CRAN Mirrors](https://cran.r-project.org/mirrors.html) and try a different one.
++ Find the link for install R for the first time and click on it
++ Click on the the Download R link on the page that opens
++ Use the installer that downloads to install R
+
+**Download and install R Studio:**
++ Go to the [R Studio downloads](https://www.rstudio.com/products/rstudio/download/) page
++ Click on the DOWNLOAD button under the RStudio Desktop column on the downloads page
++ Choose the download for the operating system you have and click on it
++ Use the installer that downloads to install R Studio
+
+### Download and save the tutorial materials
++ Download the participant files and save them together in the same folder on your computer:
++ Click on the green Code button toward the top of this GitHub page
+Choose Download ZIP
++ Unzip the downloaded zip file and save all the files in a single folder on your computer
+
+### Install the rmarkdown, tidyverse, haven, finalfit, knitr and table1 packages**
+
+Open RStudio and follow these instructions :
++ Click on the Tools menu
++ Type rmarkdown, tidyverse, haven, table1, finalfit, knitr into the dialog box that opens
++ Click install (R will do stuff for a while, this might look like errors but is fine)
+
+## **Background and purpose of this tutorial**
 
 The purpose of this tutorial is to provide brief introduction to conducting design-based analysis of complex sample survey data using the `survey` package in `R`.
 
