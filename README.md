@@ -4,7 +4,7 @@
 To complete this tutorial, you will need to complete the following steps:
 1. Install R and R Studio
 2. Download and save the tutorial materials
-3. Install the rmarkdown, tidyverse, survey, svydiags, naniar, and table1 packages (if you do not already have them)
+3. Install the survey, svydiags, tidyverse, naniar, stats, and jtools packages (if you do not already have them)
 
 Follow the instructions below to install and download everything you will need.
 
@@ -31,11 +31,11 @@ R is the software and R Studio is the IDE (Interactive Development Environment) 
 Choose Download ZIP
 + Unzip the downloaded zip file and save all the files in a single folder on your computer
 
-### Install the rmarkdown, tidyverse, haven, finalfit, knitr and table1 packages**
+### Install the survey, svydiags, tidyverse, naniar, stats, and jtools packages**
 
-Open RStudio and follow these instructions :
+Open RStudio and follow these instructions:
 + Click on the Tools menu
-+ Type rmarkdown, tidyverse, haven, table1, finalfit, knitr into the dialog box that opens
++ Type survey, svydiags, tidyverse, naniar, stats, and jtools into the dialog box that opens
 + Click install (R will do stuff for a while, this might look like errors but is fine)
 
 ## **Background and purpose of this tutorial**
