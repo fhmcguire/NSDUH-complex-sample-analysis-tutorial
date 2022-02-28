@@ -57,6 +57,7 @@ The data frame included in this tutorial (`nsduh_20152019_subset.RData`) include
 **Unconditional analysis of a subpopulation**: In addition, researchers are often interested in studying a specific subpopulation (e.g., adolescents). Here, it is neccessary to identify the subpopulation within the overall dataset for the analysis at hand. **Avoid dropping unused observations as this removes key information used to generate variance estimates.** Additional background information on subpopulation analysis can be found in [West, Berglund, & Herringa, 2008](https://journals.sagepub.com/doi/pdf/10.1177/1536867X0800800404) and in [Lumley, 2021](https://cran.r-project.org/web/packages/survey/vignettes/domain.pdf).
 
 ### Key issues and procedures covered
+1. Load packages
 1. Load the data frame and identify a subpopulation of interest
 2. Setup design-based analysis using `svydesign`
 3. Descriptive statistics using `svymean`, `svyby`, and `svyciprop`
