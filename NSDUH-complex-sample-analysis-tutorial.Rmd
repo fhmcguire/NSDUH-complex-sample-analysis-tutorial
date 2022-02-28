@@ -32,53 +32,70 @@ The data frame included in this tutorial (`nsduh_20152019_subset.RData`) include
 **Unconditional analysis of a subpopulation**: In addition, researchers are often interested in studying a specific subpopulation (e.g., adolescents). Here, it is neccessary to identify the subpopulation within the overall dataset for the analysis at hand. **Avoid dropping unused observations as this removes key information used to generate variance estimates.** Additional background information on subpopulation analysis can be found in [West, Berglund, & Herringa, 2008](https://journals.sagepub.com/doi/pdf/10.1177/1536867X0800800404) and in [Lumley, 2021](https://cran.r-project.org/web/packages/survey/vignettes/domain.pdf).
 
 ### Key issues and procedures covered
-1. Load the data frame and identify a subpopulation of interest
-2. Setup design-based analysis using `svydesign`
-3. Descriptive statistics using `svymean`, `svyby`, and `svyciprop`
-4. T-tests and design-based Wald (chi-square) tests of independence
-5. Regression analysis using `svyglm`
-6. Regression diagnositics using the `svydiags` package (under construction!)
+1. Load packages
+2. Load the data frame and identify a subpopulation of interest
+3. Setup design-based analysis using `svydesign`
+4. Descriptive statistics using `svymean`, `svyby`, and `svyciprop`
+5. T-tests and design-based Wald (chi-square) tests of independence
+6. Regression analysis using `svyglm`
+7. Regression diagnositics using the `svydiags` package (under construction!)
 
 Note: A useful resource for analyzing complex sample data in R is available [here](http://asdfree.com/national-study-on-drug-use-and-health-nsduh.html).
 
 ## **Setup**
 
-First, we need to load the NSDUH 2015-2019 dataset and the necessary `R` packages relevant for this analysis.
+First, we will load the necessary `R` packages relevant for this analysis.
+
+**If you do not have these packages installed**, follow these steps:
+    
+    1. Click on the Tools menu
+    2. Type survey, svydiags, tidyverse, naniar, stats, and jtools into the dialog box that open.
+    3. Click install (R will do stuff for a while, this might look like errors but is fine)
 
 The most important package is the `survey` package [(Lumley, 2021)](https://cran.r-project.org/web/packages/survey/survey.pdf). This package provides flexible tools to generate design-based estimates that account for the complex sample survey design of NSDUH.
 
 We will also use the `svydiags` package to compute diagnostic data for regression models fitted with complex survey data [Valliant, 2018](https://cran.r-project.org/web/packages/svydiags/svydiags.pdf)
 
-This project also uses the core suite of `tidyverse` packages to assist with data management procedures [(Wickham, 2021)](https://cran.r-project.org/web/packages/tidyverse/tidyverse.pdf), the `stats` package to run statistical procedures [(R Core Team)](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/00Index.html), and the `jtools` package for miscellaneous statistical procedures [(Long, 2021)](https://cran.r-project.org/web/packages/jtools/jtools.pdf).
+This project also uses the core suite of `tidyverse` [(Wickham, 2021)](https://cran.r-project.org/web/packages/tidyverse/tidyverse.pdf) packages and the `naniar` [(Tierny et al., 2021)](https://cran.r-project.org/web/packages/naniar/naniar.pdf) packages to assist with data management procedures , the `stats` package to run statistical procedures [(R Core Team)](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/00Index.html), and the `jtools` package for miscellaneous statistical procedures [(Long, 2021)](https://cran.r-project.org/web/packages/jtools/jtools.pdf).
 
 ```{r setup, message=FALSE}
-# set working directory (update file path to where you stored the dataset)
-setwd("C:/Users/Hunter McGuire/Desktop/Box Sync/Invited Talks and Guest Lectures/Complex Sample Survey Analysis/")
-
 # load packages
 library(survey) ## run design-based analysis
 library(svydiags) ## regression diagnostics
 library(tidyverse) ## data management
-library(stats) ## for running statistical procedures
-library(jtools) ## Analysis and Presentation of Social Scientific Data
+library(naniar) ## data management
+library(stats) ## run statistical procedures
+library(jtools) ## miscellaneous statistical tools
 ```
 
 ## **Load the data frame and identify a subpopulation of interest**
 
+**NOTE: The data frame must be located in the same folder as this RMarkdown file in order to be properly loaded.**
+
 The following code outlines some initial data management steps. I have renamed some variables to make it easier to quickly identify and interpret results. See the [NSDUH 2019 Public Use File Codebook](https://www.datafiles.samhsa.gov/sites/default/files/field-uploads-protected/studies/NSDUH-2019/NSDUH-2019-datasets/NSDUH-2019-DS0001/NSDUH-2019-DS0001-info/NSDUH-2019-DS0001-info-codebook.pdf) for more information on variables and coding schemes in NSDUH.
 
-**Subpopulation**: In this tutorial, the subpopulation of interest are adults (aged 18+) in the United States with non-missing data on the following variables: depression_bin (past-year major depressive episode, binary coded), stress_cont (Kessler K6 distress scale, continuous: range 0-24), race/ethnicity (newrace2), gender (irsex), sexident (sexual orientation), annual household income level (income), and anyhlti2 (any health insurance).
+**Subpopulation**: In this tutorial, the subpopulation of interest are adults (aged 18+) in the United States with non-missing data on the following variables: depression_bin (past-year major depressive episode, binary coded), stress_cont (Kessler K6 distress scale, continuous: range 0-24), race/ethnicity (newrace2), gender (irsex), sexual orientation (sexident), annual household income level (income), and anyhlti2 (any health insurance).
 
 Following the procedures below, we identify a subpopulation of N=207,479 participants who meet our study eligibility criteria.
+
+### Inference and reporting implications for subpopulation analysis
+
+The decision to identify a subpopulation in complex sample survey analysis has critical implications due to its impact on variance calculations. While mean and proportion estimates  will not be affected, failing to conduct this step could lead to incorrect inferences (e.g., significant results that become insignificant when accounting for complete design-based variance information).
+
+When we identify the subpop, R will (1) use our subpopulation data to generate estimates (means, proprotions, etc.) and (2) use the entire data frame to calculate standard errors and confidence intervals.
+
+When reporting results from subpopulation analyses, you should report the subpopulation sample size as opposed to the entire data frame sample size. In our tutorial, this means that we will report a analytic sample size of N=207,479 as opposed to N=282,768 (total NSDUH 2015-2019 sample). In addition, if we were to additionally stratify our primary analysis by gender, we could report the total subpop N, female subpop N, and male subpop N.
+
 
 ```{r datamgmt, message=FALSE}
 # Load the data set
 load(file="nsduh_20152019_subset.RData")
+
+# If the data frame is not automatically named "nsduh", uncomment the code below and run it.
 nsduh <- rename(nsduh_20152019_subset) # shorten the data set name
 rm(nsduh_20152019_subset) # remove old data frame
 
 # set invalid responses to missing (NA)
-library(naniar)
 nsduh <- nsduh %>% 
   replace_with_na(replace = list(sexident = c(85, 89, 94, 97, 98, 99))) %>% 
   replace_with_na(replace = list(anyhlti2 = c(94, 97, 98)))
@@ -124,7 +141,7 @@ NSDUH includes the following survey weight variables: **vestr** (variance estima
 
 **Combining waves**: Since we are combining multiple data collection waves in this tutorial, we need to divide the person-level analysis weight by the number of waves included.
 
-**Subpopulation**: Using the "subpop" variable we generated in the prior step, we can simply subset the `svydesign` object to includ our subpopulation (N=207,479).
+**Subpopulation**: Using the "subpop" variable we generated in the prior step, we can simply subset the `svydesign` object to include our subpopulation (N=207,479). 
 
 ```{r svydesign, message=FALSE}
 # divide person-level analysis weight by 5 (5 waves included: 2015-2019)
@@ -248,11 +265,15 @@ a2 <- svyglm(stress_cont ~ black + hispanic + asian + naan + nhpi + multi + inco
              family=gaussian())
 summary(a2) ## Note: we should assess regression diagnostics before reporting results
 
-### Logistic regression
+
+# Logistic regression
+## What is the association between sexual orientation and depression?
 a3 <- svyglm(depression_bin ~ gay + bi,
              nsduh_design_sp,
-             family=quasibinomial())
+             family=binomial(link=logit))
 summary(a3)
+exp(coef(a3)) # get odds ratios (ORs)
+exp(confint(a3)) # get 95% CIs around ORs
 ```
 
 ## **Regression diagnostics for complex sample data**
