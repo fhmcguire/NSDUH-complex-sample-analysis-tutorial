@@ -48,9 +48,9 @@ First, we will load the necessary `R` packages relevant for this analysis.
 
 **If you do not have these packages installed**, follow these steps:
     
-    1. Click on the Tools menu
-    2. Type survey, svydiags, tidyverse, naniar, stats, and jtools into the dialog box that open.
-    3. Click install (R will do stuff for a while, this might look like errors but is fine)
+1. Click on the Tools menu
+2. Type survey, svydiags, tidyverse, naniar, stats, and jtools into the dialog box that opens.
+3. Click install (R will do stuff for a while, this might look like errors but is fine)
 
 The most important package is the `survey` package [(Lumley, 2021)](https://cran.r-project.org/web/packages/survey/survey.pdf). This package provides flexible tools to generate design-based estimates that account for the complex sample survey design of NSDUH.
 
@@ -74,7 +74,7 @@ library(jtools) ## miscellaneous statistical tools
 
 The following code outlines some initial data management steps. I have renamed some variables to make it easier to quickly identify and interpret results. See the [NSDUH 2019 Public Use File Codebook](https://www.datafiles.samhsa.gov/sites/default/files/field-uploads-protected/studies/NSDUH-2019/NSDUH-2019-datasets/NSDUH-2019-DS0001/NSDUH-2019-DS0001-info/NSDUH-2019-DS0001-info-codebook.pdf) for more information on variables and coding schemes in NSDUH.
 
-**Subpopulation**: In this tutorial, the subpopulation of interest are adults (aged 18+) in the United States with non-missing data on the following variables: depression_bin (past-year major depressive episode, binary coded), stress_cont (Kessler K6 distress scale, continuous: range 0-24), race/ethnicity (newrace2), gender (irsex), sexual orientation (sexident), annual household income level (income), and anyhlti2 (any health insurance).
+**Subpopulation**: In this tutorial, the subpopulation of interest are adults (aged 18+) in the United States with non-missing data on the following variables: depression_bin (past-year major depressive episode, binary coded), stress_cont (Kessler K6 distress scale, continuous: range 0-24), newrace2 (race/ethnicity), irsex (gender), sexident (sexual orientation), catag6 (age category), income (annual household income level), and anyhlti2 (any health insurance).
 
 Following the procedures below, we identify a subpopulation of N=207,479 participants who meet our study eligibility criteria.
 
@@ -92,8 +92,8 @@ When reporting results from subpopulation analyses, you should report the subpop
 load(file="nsduh_20152019_subset.RData")
 
 # If the data frame is not automatically named "nsduh", uncomment the code below and run it.
-nsduh <- rename(nsduh_20152019_subset) # shorten the data set name
-rm(nsduh_20152019_subset) # remove old data frame
+## nsduh <- rename(nsduh_20152019_subset) # shorten the data set name
+## rm(nsduh_20152019_subset) # remove old data frame
 
 # set invalid responses to missing (NA)
 nsduh <- nsduh %>% 
