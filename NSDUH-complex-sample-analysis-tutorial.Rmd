@@ -66,6 +66,7 @@ library(tidyverse) ## data management
 library(naniar) ## data management
 library(stats) ## run statistical procedures
 library(jtools) ## miscellaneous statistical tools
+library(haven) ## dependancy for dealing with Stata/SAS/SPSS files
 ```
 
 ## **Load the data frame and identify a subpopulation of interest**
