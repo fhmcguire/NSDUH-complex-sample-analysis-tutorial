@@ -63,9 +63,10 @@ This project also uses the core suite of `tidyverse` [(Wickham, 2021)](https://c
 library(survey) ## run design-based analysis
 library(svydiags) ## regression diagnostics
 library(tidyverse) ## data management
-library(naniar) ## data management
+library(naniar) ## data management (recoding missing values)
 library(stats) ## run statistical procedures
 library(jtools) ## miscellaneous statistical tools
+library(haven)
 ```
 
 ## **Load the data frame and identify a subpopulation of interest**
@@ -92,7 +93,7 @@ When reporting results from subpopulation analyses, you should report the subpop
 load(file="nsduh_20152019_subset.RData")
 
 # If the data frame is not automatically named "nsduh", uncomment the code below and run it.
-## nsduh <- rename(nsduh_20152019_subset) # shorten the data set name
+## nsduh <- dplyr::rename(nsduh_20152019_subset) # shorten the data set name
 ## rm(nsduh_20152019_subset) # remove old data frame
 
 # set invalid responses to missing (NA)
